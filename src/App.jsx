@@ -1,13 +1,13 @@
 
-
+import { Auth } from "./components/Auth"
 
 function App() {
  
 
   return (
     <>
-      <div>FIREBASE</div>
-        
+      <div className="App">FIREBASE</div>
+      <Auth/>
     </>
   )
 }
