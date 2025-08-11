@@ -1,7 +1,8 @@
 import { Auth } from './Auth'
 import { useState, useEffect } from 'react'
-import { db } from '../config/firebase'
+import { db, auth, storage } from '../config/firebase'
 import { getDocs, collection, addDoc, deleteDoc, doc } from 'firebase/firestore'
+import { ref, uploadBytes } from 'firebase/storage'
 
 export const Tasks = () => {
     const [tasksList, setTasksList] = useState([]);
@@ -12,6 +13,8 @@ export const Tasks = () => {
     const [newAmount, setNewAmount] = useState(0);
     const [newStatus, setNewStatus] = useState(false);
 
+// File Upload State
+const [fileUpload, setFileUpload] = useState(null);
 
     const tasksCollectionRef = collection(db, "Tasks");
 
@@ -44,6 +47,7 @@ export const Tasks = () => {
                 Task: newTask,
                 Amount: newAmount,
                 Status: newStatus,
+                userId: auth?.currentUser?.uid,
             });
             getTasksList();
         } catch (err) {
@@ -60,8 +64,17 @@ export const Tasks = () => {
         } catch (err) {
             console.error(err)
         }
-
     }
+
+const uploadFile = async () => {
+    try {
+       if(!fileUpload) return;
+    const filesFolderRef = ref(storage, `projectFiles/${fileUpload.name}`);  
+    await uploadBytes(filesFolderRef, fileUpload);
+    } catch (err) {
+      console.error(err)  
+    } 
+}
 
     return (
         <div>
@@ -96,6 +109,10 @@ export const Tasks = () => {
                     <p>Status: {task.Status}</p>
                     <p>Amount: {task.Amount}</p>
                     <button onClick={() => deleteTask(task.id)}>Delete</button>
+                    <div>
+                        <input type="file" onChange={(e) => setFileUpload(e.target.files[0])}/>
+                        <button onClick={uploadFile}>Upload file</button>
+                    </div>
                 </div>
             ))}</div>
         </div>
