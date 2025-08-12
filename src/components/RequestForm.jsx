@@ -136,60 +136,111 @@ export const RequestForm = () => {
     );
   }
 
-  return (
-    <div style={{ maxWidth: 700, margin: 'auto' }}>
-      <h2>Create Service Request</h2>
+return (
+  <div className="w-full lg:w-1/2 mx-auto p-6 border rounded-lg shadow-sm">
+    <h2 className="text-xl font-semibold mb-6">Create Service Request</h2>
 
-      <form onSubmit={handleSubmit}>
-        <fieldset disabled={loading} style={{ border: 'none', padding: 0 }}>
-          <div>
-            <label>Account</label>
-            <input value={account} onChange={(e) => setAccount(e.target.value)} required />
+    <form onSubmit={handleSubmit}>
+      <fieldset disabled={loading} className="border-0 p-0 m-0">
+        
+        {/* Grid de 2 columnas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Account</label>
+            <input
+              className="border rounded px-3 py-2"
+              value={account}
+              onChange={(e) => setAccount(e.target.value)}
+              required
+            />
           </div>
 
-          <div>
-            <label>Amount</label>
-            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Amount</label>
+            <input
+              type="number"
+              className="border rounded px-3 py-2"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
           </div>
 
-          <div>
-            <label>Required Date</label>
-            <input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} required />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Required Date</label>
+            <input
+              type="date"
+              className="border rounded px-3 py-2"
+              value={requiredDate}
+              onChange={(e) => setRequiredDate(e.target.value)}
+              required
+            />
           </div>
 
-          <div>
-            <label>Pickup Address</label>
-            <input value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} required />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Pickup Address</label>
+            <input
+              className="border rounded px-3 py-2"
+              value={pickupAddress}
+              onChange={(e) => setPickupAddress(e.target.value)}
+              required
+            />
           </div>
 
-          <div>
-            <label>Delivery Address</label>
-            <input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} required />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Delivery Address</label>
+            <input
+              className="border rounded px-3 py-2"
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              required
+            />
           </div>
 
-          <div>
-            <label>Bank Entity</label>
-            <input value={bankEntity} onChange={(e) => setBankEntity(e.target.value)} />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Bank Entity</label>
+            <input
+              className="border rounded px-3 py-2"
+              value={bankEntity}
+              onChange={(e) => setBankEntity(e.target.value)}
+            />
           </div>
 
-          <div>
-            <label>Beneficiary ID</label>
-            <input value={beneficiaryId} onChange={(e) => setBeneficiaryId(e.target.value)} />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Beneficiary ID</label>
+            <input
+              className="border rounded px-3 py-2"
+              value={beneficiaryId}
+              onChange={(e) => setBeneficiaryId(e.target.value)}
+            />
           </div>
 
-          <div>
-            <label>Attachment (optional)</label>
-            <input type="file" onChange={(e) => setAttachment1(e.target.files?.[0] || null)} />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Attachment (optional)</label>
+            <input
+              type="file"
+              className="border rounded px-3 py-2"
+              onChange={(e) => setAttachment1(e.target.files?.[0] || null)}
+            />
           </div>
+        </div>
 
-          <div style={{ marginTop: 10 }}>
-            <button type="submit">{loading ? 'Creating...' : 'Create Request'}</button>
-          </div>
-        </fieldset>
-      </form>
+        {/* Botón abajo ocupando todo el ancho */}
+        <div className="pt-4">
+          <button
+            type="submit"
+            className="w-full border rounded px-4 py-2 font-medium"
+          >
+            {loading ? 'Creating...' : 'Create Request'}
+          </button>
+        </div>
+      </fieldset>
+    </form>
 
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
-  );
+    {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
+    {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+  </div>
+);
+
+
 };
