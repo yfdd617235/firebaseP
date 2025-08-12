@@ -1,16 +1,16 @@
-
-import { Auth } from "./components/Auth";
-import {Tasks} from "./components/tasks";
-import {db} from "./config/firebase";
+import { UserRegister } from "./components/UserRegister";
+import { UserLogin } from "./components/UserLogin";
+import { Tasks } from "./components/Tasks";
 
 function App() {
- 
+
 
   return (
     <>
       <div className="App">FIREBASE</div>
-      <Auth/>
-      <Tasks/>
+      <UserLogin />
+      <UserRegister />
+      <Tasks />
     </>
   )
 }
