@@ -1,105 +1,3 @@
-// import { useState, useEffect } from 'react';
-// import { auth, googleProvider, db } from '../config/firebase';
-// import { 
-//   signInWithEmailAndPassword, 
-//   signInWithPopup, 
-//   signOut, 
-//   onAuthStateChanged 
-// } from 'firebase/auth';
-// import { doc, getDoc } from 'firebase/firestore';
-
-// export const UserLogin = () => {
-
-//   const [email, setEmail] = useState('');
-//   const [password, setPassword] = useState('');
-//   const [error, setError] = useState(null);
-
-//   const [currentUser, setCurrentUser] = useState(null);
-//   const [role, setRole] = useState(null);
-//   const [name, setName] = useState('');
-
-//   // Detectar cambios en el usuario logueado
-//   useEffect(() => {
-//     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-//       if (user) {
-//         setCurrentUser(user);
-//         // Obtener rol desde Firestore
-//         const userDoc = await getDoc(doc(db, 'users', user.uid));
-//         if (userDoc.exists()) {
-//           setRole(userDoc.data().role);
-//           setName(userDoc.data().name);
-//         } else {
-//           setRole('No role assigned');
-//         }
-//       } else {
-//         setCurrentUser(null);
-//         setRole(null);
-//         setName(null);
-//       }
-//     });
-//     return unsubscribe;
-//   }, []);
-
-//   const loginUser = async () => {
-//     setError(null);
-//     try {
-//       await signInWithEmailAndPassword(auth, email, password);
-//     } catch (err) {
-//       setError(err.message);
-//     }
-//   };
-
-//   const loginWithGoogle = async () => {
-//     setError(null);
-//     try {
-//       await signInWithPopup(auth, googleProvider);
-//     } catch (err) {
-//       setError(err.message);
-//     }
-//   };
-
-//   const logoutUser = async () => {
-//     setError(null);
-//     try {
-//       await signOut(auth);
-//     } catch (err) {
-//       setError(err.message);
-//     }
-//   };
-
-//   return (
-//     <div style={{ maxWidth: 400, margin: 'auto' }}>
-//       {currentUser ? (
-//         <>
-//           <h3>Welcome, {name || currentUser.email}</h3>
-//           <p>Role: {role}</p>
-//           <button onClick={logoutUser}>Logout</button>
-//         </>
-//       ) : (
-//         <>
-//           <h3>Login</h3>
-//           <input 
-//             placeholder="Email" 
-//             value={email} 
-//             onChange={e => setEmail(e.target.value)} 
-//           />
-//           <input 
-//             placeholder="Password" 
-//             type="password" 
-//             value={password} 
-//             onChange={e => setPassword(e.target.value)} 
-//           />
-//           <button onClick={loginUser}>Login</button>
-//           <hr />
-//           <button onClick={loginWithGoogle}>Sign in with Google</button>
-//         </>
-//       )}
-
-//       {error && <p style={{ color: 'red' }}>{error}</p>}
-//     </div>
-//   );
-// };
-
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -119,24 +17,77 @@ export const UserLogin = () => {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: 'auto' }}>
-      {loading ? <p>Loading...</p> : user ? (
-        <>
-          <h3>Welcome, {profile?.name || user.email}</h3>
-          <p>Role: {profile?.role || 'No role assigned'}</p>
-          <button onClick={() => signOutUser()}>Logout</button>
-        </>
-      ) : (
-        <>
-          <h3>Login</h3>
-          <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-          <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-          <button onClick={onLogin}>Login</button>
-          <hr />
-          <button onClick={() => signInWithGoogle().catch(e => setError(e.message))}>Sign in with Google</button>
-        </>
-      )}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-sm p-6 bg-white border rounded-lg shadow-sm">
+        {loading ? (
+          <p className="text-center text-gray-500">Loading...</p>
+        ) : user ? (
+          <div className="space-y-4 text-center">
+            <h3 className="text-lg font-semibold">
+              Welcome, {profile?.name || user.email}
+            </h3>
+            <p className="text-sm text-gray-600">
+              Role: {profile?.role || 'No role assigned'}
+            </p>
+            <button
+              onClick={() => signOutUser()}
+              className="w-full border rounded px-4 py-2 font-medium hover:bg-gray-100"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Login</h3>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Email</label>
+              <input
+                type="email"
+                className="border rounded px-3 py-2"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Password</label>
+              <input
+                type="password"
+                className="border rounded px-3 py-2"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+              />
+            </div>
+
+            <button
+              onClick={onLogin}
+              className="w-full border rounded px-4 py-2 font-medium hover:bg-gray-100"
+            >
+              Login
+            </button>
+
+            <div className="relative flex items-center">
+              <span className="flex-grow border-t"></span>
+              <span className="px-2 text-sm text-gray-500">or</span>
+              <span className="flex-grow border-t"></span>
+            </div>
+
+            <button
+              onClick={() => signInWithGoogle().catch((e) => setError(e.message))}
+              className="w-full border rounded px-4 py-2 font-medium hover:bg-gray-100"
+            >
+              Sign in with Google
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
+        )}
+      </div>
     </div>
   );
 };

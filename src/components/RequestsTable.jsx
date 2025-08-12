@@ -1,6 +1,5 @@
-// src/components/RequestsTable.jsx
 import { useEffect, useState } from "react";
-import { db } from "../config/firebase";
+import { db, storage } from "../config/firebase";
 import {
   collection,
   getDocs,
@@ -8,24 +7,40 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useAuth } from "../context/AuthContext"; // Aquí debe venir el role y userId
 
 export const RequestsTable = () => {
   const [requests, setRequests] = useState([]);
   const [filters, setFilters] = useState({});
+  const { profile } = useAuth();
 
-  // Cargar solicitudes al montar
+  const role = profile?.role || "user";
+  const currentUserId = profile?.uid;
+
+  const canEditStatus = role === "admin";
+  const canDelete = role === "admin";
+  const canUploadAttachment2 = role === "provider";
+
+  // Cargar solicitudes
   useEffect(() => {
     const fetchRequests = async () => {
       const snapshot = await getDocs(collection(db, "serviceRequests"));
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      let data = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
       }));
+
+      // Filtrar para usuarios normales
+      if (role === "user") {
+        data = data.filter((req) => req.userId === currentUserId);
+      }
+
       setRequests(data);
     };
 
     fetchRequests();
-  }, []);
+  }, [role, currentUserId]);
 
   const handleFilterChange = (e, field) => {
     setFilters({
@@ -50,7 +65,20 @@ export const RequestsTable = () => {
     setRequests((prev) => prev.filter((req) => req.id !== id));
   };
 
-  // Filtrar resultados
+  const handleUploadAttachment2 = async (id, file) => {
+    if (!file) return;
+    const fileRef = ref(storage, `serviceRequests/${id}/attachment2_${file.name}`);
+    await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(fileRef);
+    await updateDoc(doc(db, "serviceRequests", id), { attachment2: url });
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === id ? { ...req, attachment2: url } : req
+      )
+    );
+  };
+
+  // Filtrar resultados con los inputs de búsqueda
   const filteredRequests = requests.filter((req) => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
@@ -61,84 +89,117 @@ export const RequestsTable = () => {
   });
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Service Requests</h2>
+    <div className="p-5">
+      <h2 className="text-lg font-semibold mb-4">Service Requests</h2>
 
       {/* Filtros */}
-      <div style={{ marginBottom: 10 }}>
+      <div className="flex flex-wrap gap-2 mb-4">
         {["requestId", "userName", "status"].map((field) => (
           <input
             key={field}
             placeholder={`Filter by ${field}`}
             value={filters[field] || ""}
             onChange={(e) => handleFilterChange(e, field)}
-            style={{ marginRight: 10 }}
+            className="border rounded px-3 py-2 text-sm"
           />
         ))}
       </div>
 
-      {/* Tabla */}
-      <table border="1" cellPadding="5">
-        <thead>
-          <tr>
-            <th>ID Request</th>
-            <th>User</th>
-            <th>Request Date</th>
-            <th>Status</th>
-            <th>Payment Instructions</th>
-            <th>Attachment 1</th>
-            <th>Attachment 2</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredRequests.map((req) => (
-            <tr key={req.id}>
-              <td>{req.requestId}</td>
-              <td>{req.userName}</td>
-              <td>
-                {req.requestDate?.seconds
-                  ? new Date(req.requestDate.seconds * 1000).toLocaleDateString()
-                  : ""}
-              </td>
-              <td>
-                <select
-                  value={req.status || ""}
-                  onChange={(e) =>
-                    handleEdit(req.id, "status", e.target.value)
-                  }
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </td>
-              <td>
-                {req.paymentInstructions
-                  ? JSON.stringify(req.paymentInstructions)
-                  : ""}
-              </td>
-              <td>
-                {req.attachment1 && (
-                  <a href={req.attachment1} target="_blank" rel="noreferrer">
-                    View
-                  </a>
-                )}
-              </td>
-              <td>
-                {req.attachment2 && (
-                  <a href={req.attachment2} target="_blank" rel="noreferrer">
-                    View
-                  </a>
-                )}
-              </td>
-              <td>
-                <button onClick={() => handleDelete(req.id)}>Delete</button>
-              </td>
+      {/* Tabla con scroll horizontal */}
+      <div className="overflow-x-auto border rounded-lg">
+        <table className="min-w-[800px] w-full border-collapse">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-4 py-2 text-left">ID Request</th>
+              <th className="border px-4 py-2 text-left">User</th>
+              <th className="border px-4 py-2 text-left">Request Date</th>
+              <th className="border px-4 py-2 text-left">Status</th>
+              <th className="border px-4 py-2 text-left">Payment Instructions</th>
+              <th className="border px-4 py-2 text-left">Attachment 1</th>
+              <th className="border px-4 py-2 text-left">Attachment 2</th>
+              {canDelete && <th className="border px-4 py-2 text-left">Actions</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredRequests.map((req) => (
+              <tr key={req.id} className="hover:bg-gray-50">
+                <td className="border px-4 py-2">{req.requestId}</td>
+                <td className="border px-4 py-2">{req.userName}</td>
+                <td className="border px-4 py-2">
+                  {req.requestDate?.seconds
+                    ? new Date(req.requestDate.seconds * 1000).toLocaleDateString()
+                    : ""}
+                </td>
+                <td className="border px-4 py-2">
+                  {canEditStatus ? (
+                    <select
+                      value={req.status || ""}
+                      onChange={(e) =>
+                        handleEdit(req.id, "status", e.target.value)
+                      }
+                      className="border rounded px-2 py-1"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Approved">Approved</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  ) : (
+                    req.status
+                  )}
+                </td>
+                <td className="border px-4 py-2">
+                  {req.paymentInstructions
+                    ? JSON.stringify(req.paymentInstructions)
+                    : ""}
+                </td>
+                <td className="border px-4 py-2">
+                  {req.attachment1 && (
+                    <a
+                      href={req.attachment1}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      View
+                    </a>
+                  )}
+                </td>
+                <td className="border px-4 py-2">
+                  {req.attachment2 && (
+                    <a
+                      href={req.attachment2}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      View
+                    </a>
+                  )}
+                  {canUploadAttachment2 && (
+                    <input
+                      type="file"
+                      onChange={(e) =>
+                        handleUploadAttachment2(req.id, e.target.files[0])
+                      }
+                      className="mt-2"
+                    />
+                  )}
+                </td>
+                {canDelete && (
+                  <td className="border px-4 py-2">
+                    <button
+                      onClick={() => handleDelete(req.id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
