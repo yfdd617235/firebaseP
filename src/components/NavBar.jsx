@@ -29,11 +29,11 @@ const NavBar = () => {
               Admin Dashboard
             </Link>
             <Link to="/dashboard" className="hover:underline">
-              User Dashboard
+              Client Dashboard
             </Link>
           </>
         );
-      case "user":
+      case "client":
         return (
           <Link to="/dashboard" className="hover:underline">
             Dashboard
