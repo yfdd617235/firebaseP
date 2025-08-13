@@ -12,8 +12,7 @@
 // import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // import { useAuth } from "../context/AuthContext";
 
-
-// // Load jsPDF and html2canvas from CDN
+// // Load jsPDF from CDN
 // const loadScripts = () => {
 //   return Promise.all([
 //     new Promise((resolve) => {
@@ -21,13 +20,6 @@
 //       script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 //       script.async = true;
 //       script.onload = () => resolve(window.jspdf);
-//       document.body.appendChild(script);
-//     }),
-//     new Promise((resolve) => {
-//       const script = document.createElement("script");
-//       script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-//       script.async = true;
-//       script.onload = () => resolve(window.html2canvas);
 //       document.body.appendChild(script);
 //     }),
 //   ]);
@@ -75,9 +67,9 @@
 // export const RequestsTable = () => {
 //   const [requests, setRequests] = useState([]);
 //   const [filters, setFilters] = useState({});
+//   const [error, setError] = useState(null);
 //   const { profile, loading } = useAuth();
 //   const hasLogged = useRef(false); // Prevent duplicate logs in StrictMode
-//   const tableRef = useRef(null); // Reference to the table element
 //   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
 //   if (loading) {
@@ -169,25 +161,12 @@
 //   const handleDownloadPDF = async () => {
 //     if (isGeneratingPDF) return;
 //     setIsGeneratingPDF(true);
+//     setError(null);
 
 //     try {
-//       const [jspdf, html2canvas] = await loadScripts();
+//       const [jspdf] = await loadScripts();
 //       const { jsPDF } = jspdf;
 
-//       const table = tableRef.current;
-//       if (!table) {
-//         console.error("Table element not found");
-//         return;
-//       }
-
-//       // Capture the table as a canvas
-//       const canvas = await html2canvas(table, {
-//         scale: 2, // Increase resolution
-//         useCORS: true,
-//         logging: false,
-//       });
-
-//       const imgData = canvas.toDataURL("image/png");
 //       const pdf = new jsPDF({
 //         orientation: "landscape", // Use landscape to fit wide table
 //         unit: "mm",
@@ -196,27 +175,64 @@
 
 //       const pageWidth = pdf.internal.pageSize.getWidth();
 //       const pageHeight = pdf.internal.pageSize.getHeight();
-//       const imgWidth = pageWidth - 20; // 10mm margin on each side
-//       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+//       const margin = 10;
+//       const rowHeight = 10;
+//       const colWidths = [30, 30, 30, 20, 80, 30, 30, canDelete ? 20 : 0]; // Widths for each column
+//       const headers = [
+//         "ID Request",
+//         "Client",
+//         "Request Date",
+//         "Status",
+//         "Payment Instructions",
+//         "Attachment 1",
+//         "Attachment 2",
+//         ...(canDelete ? ["Actions"] : []),
+//       ];
 
-//       let heightLeft = imgHeight;
-//       let position = 0;
+//       let y = margin + 10; // Start below title
+//       pdf.setFontSize(12);
+//       pdf.text("Service Requests", margin, margin); // Title
 
-//       // Add first page
-//       pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-//       heightLeft -= pageHeight - 20;
+//       // Draw headers
+//       let x = margin;
+//       pdf.setFontSize(10);
+//       headers.forEach((header, index) => {
+//         pdf.text(header, x, y, { maxWidth: colWidths[index] });
+//         x += colWidths[index];
+//       });
+//       y += rowHeight;
 
-//       // Add additional pages if the table is too tall
-//       while (heightLeft >= 0) {
-//         position = heightLeft - imgHeight;
-//         pdf.addPage();
-//         pdf.addImage(imgData, "PNG", 10, position + 10, imgWidth, imgHeight);
-//         heightLeft -= pageHeight - 20;
-//       }
+//       // Draw rows
+//       filteredRequests.forEach((req) => {
+//         if (y + rowHeight > pageHeight - margin) {
+//           pdf.addPage();
+//           y = margin;
+//         }
+//         x = margin;
+//         pdf.text(req.requestId || "", x, y, { maxWidth: colWidths[0] });
+//         x += colWidths[0];
+//         pdf.text(req.userName || "", x, y, { maxWidth: colWidths[1] });
+//         x += colWidths[1];
+//         pdf.text(formatDate(req.requestDate) || "", x, y, { maxWidth: colWidths[2] });
+//         x += colWidths[2];
+//         pdf.text(req.status || "", x, y, { maxWidth: colWidths[3] });
+//         x += colWidths[3];
+//         pdf.text(formatPaymentInstructions(req.paymentInstructions) || "", x, y, { maxWidth: colWidths[4] });
+//         x += colWidths[4];
+//         pdf.text(req.attachment1 ? "View" : "", x, y, { maxWidth: colWidths[5] });
+//         x += colWidths[5];
+//         pdf.text(req.attachment2 ? "View" : "", x, y, { maxWidth: colWidths[6] });
+//         x += colWidths[6];
+//         if (canDelete) {
+//           pdf.text("Delete", x, y, { maxWidth: colWidths[7] });
+//         }
+//         y += rowHeight;
+//       });
 
 //       pdf.save("service_requests.pdf");
 //     } catch (error) {
 //       console.error("Error generating PDF:", error);
+//       setError("No se pudo generar el PDF. Por favor, intenta de nuevo.");
 //     } finally {
 //       setIsGeneratingPDF(false);
 //     }
@@ -241,7 +257,7 @@
 //             placeholder={`Filter by ${field}`}
 //             value={filters[field] || ""}
 //             onChange={(e) => handleFilterChange(e, field)}
-//             className="border rounded px-3 py-2 text-sm"
+//             className="border rounded px-3 py-2 text-sm border-gray-300"
 //           />
 //         ))}
 //         <button
@@ -252,8 +268,9 @@
 //           {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
 //         </button>
 //       </div>
+//       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 //       <div className="overflow-x-auto border rounded-lg">
-//         <table ref={tableRef} className="min-w-[800px] w-full border-collapse">
+//         <table className="min-w-[800px] w-full border-collapse">
 //           <thead className="bg-gray-100">
 //             <tr>
 //               <th className="border px-4 py-2 text-left">ID Request</th>
@@ -270,7 +287,7 @@
 //             {filteredRequests.length === 0 ? (
 //               <tr>
 //                 <td colSpan={canDelete ? 8 : 7} className="border px-4 py-2 text-center">
-//                   No requests available
+//                   No hay solicitudes disponibles
 //                 </td>
 //               </tr>
 //             ) : (
@@ -364,19 +381,6 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "../context/AuthContext";
 
-// Load jsPDF from CDN
-const loadScripts = () => {
-  return Promise.all([
-    new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-      script.async = true;
-      script.onload = () => resolve(window.jspdf);
-      document.body.appendChild(script);
-    }),
-  ]);
-};
-
 // Function to format dates as dd-MMM-AAAA
 const formatDate = (dateInput) => {
   let date;
@@ -419,10 +423,8 @@ const formatPaymentInstructions = (paymentInstructions) => {
 export const RequestsTable = () => {
   const [requests, setRequests] = useState([]);
   const [filters, setFilters] = useState({});
-  const [error, setError] = useState(null);
   const { profile, loading } = useAuth();
   const hasLogged = useRef(false); // Prevent duplicate logs in StrictMode
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   if (loading) {
     return <div>Loading profile...</div>;
@@ -455,12 +457,25 @@ export const RequestsTable = () => {
           snapshot = await getDocs(collection(db, "serviceRequests"));
         }
 
+        // Obtener todos los userIds únicos de las solicitudes
+        const userIds = [...new Set(snapshot.docs.map((doc) => doc.data().userId))];
+
+        // Consultar la colección users para obtener el campo company
+        const usersQuery = query(collection(db, "users"), where("uid", "in", userIds));
+        const usersSnapshot = await getDocs(usersQuery);
+        const usersMap = {};
+        usersSnapshot.forEach((userDoc) => {
+          usersMap[userDoc.id] = userDoc.data().company || "";
+        });
+
+        // Mapear las solicitudes, añadiendo el campo company
         const data = snapshot.docs.map((docSnap) => ({
           id: docSnap.id,
           ...docSnap.data(),
+          company: usersMap[docSnap.data().userId] || "Unknown",
         }));
 
-        // Log only on first execution with limited info
+        // Log solo en la primera ejecución
         if (!hasLogged.current) {
           console.log(
             `Fetched ${data.length} request(s) for ${role} with UID: ${currentUserId}`
@@ -510,84 +525,8 @@ export const RequestsTable = () => {
     );
   };
 
-  const handleDownloadPDF = async () => {
-    if (isGeneratingPDF) return;
-    setIsGeneratingPDF(true);
-    setError(null);
-
-    try {
-      const [jspdf] = await loadScripts();
-      const { jsPDF } = jspdf;
-
-      const pdf = new jsPDF({
-        orientation: "landscape", // Use landscape to fit wide table
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const rowHeight = 10;
-      const colWidths = [30, 30, 30, 20, 80, 30, 30, canDelete ? 20 : 0]; // Widths for each column
-      const headers = [
-        "ID Request",
-        "Client",
-        "Request Date",
-        "Status",
-        "Payment Instructions",
-        "Attachment 1",
-        "Attachment 2",
-        ...(canDelete ? ["Actions"] : []),
-      ];
-
-      let y = margin + 10; // Start below title
-      pdf.setFontSize(12);
-      pdf.text("Service Requests", margin, margin); // Title
-
-      // Draw headers
-      let x = margin;
-      pdf.setFontSize(10);
-      headers.forEach((header, index) => {
-        pdf.text(header, x, y, { maxWidth: colWidths[index] });
-        x += colWidths[index];
-      });
-      y += rowHeight;
-
-      // Draw rows
-      filteredRequests.forEach((req) => {
-        if (y + rowHeight > pageHeight - margin) {
-          pdf.addPage();
-          y = margin;
-        }
-        x = margin;
-        pdf.text(req.requestId || "", x, y, { maxWidth: colWidths[0] });
-        x += colWidths[0];
-        pdf.text(req.userName || "", x, y, { maxWidth: colWidths[1] });
-        x += colWidths[1];
-        pdf.text(formatDate(req.requestDate) || "", x, y, { maxWidth: colWidths[2] });
-        x += colWidths[2];
-        pdf.text(req.status || "", x, y, { maxWidth: colWidths[3] });
-        x += colWidths[3];
-        pdf.text(formatPaymentInstructions(req.paymentInstructions) || "", x, y, { maxWidth: colWidths[4] });
-        x += colWidths[4];
-        pdf.text(req.attachment1 ? "View" : "", x, y, { maxWidth: colWidths[5] });
-        x += colWidths[5];
-        pdf.text(req.attachment2 ? "View" : "", x, y, { maxWidth: colWidths[6] });
-        x += colWidths[6];
-        if (canDelete) {
-          pdf.text("Delete", x, y, { maxWidth: colWidths[7] });
-        }
-        y += rowHeight;
-      });
-
-      pdf.save("service_requests.pdf");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      setError("No se pudo generar el PDF. Por favor, intenta de nuevo.");
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+  const handleDownloadPDF = () => {
+    window.print();
   };
 
   const filteredRequests = requests.filter((req) => {
@@ -602,8 +541,8 @@ export const RequestsTable = () => {
   return (
     <div className="p-5">
       <h2 className="text-lg font-semibold mb-4">Service Requests</h2>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {["requestId", "userName", "status"].map((field) => (
+      <div className="flex flex-wrap gap-2 mb-4 no-print">
+        {["requestId", "company", "userName", "status"].map((field) => (
           <input
             key={field}
             placeholder={`Filter by ${field}`}
@@ -614,18 +553,17 @@ export const RequestsTable = () => {
         ))}
         <button
           onClick={handleDownloadPDF}
-          disabled={isGeneratingPDF}
-          className="border rounded px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
+          className="border rounded px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700"
         >
-          {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
+          Download
         </button>
       </div>
-      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
       <div className="overflow-x-auto border rounded-lg">
-        <table className="min-w-[800px] w-full border-collapse">
+        <table className="min-w-[900px] w-full border-collapse table-auto">
           <thead className="bg-gray-100">
             <tr>
               <th className="border px-4 py-2 text-left">ID Request</th>
+              <th className="border px-4 py-2 text-left">Company</th>
               <th className="border px-4 py-2 text-left">Client</th>
               <th className="border px-4 py-2 text-left">Request Date</th>
               <th className="border px-4 py-2 text-left">Status</th>
@@ -638,7 +576,7 @@ export const RequestsTable = () => {
           <tbody>
             {filteredRequests.length === 0 ? (
               <tr>
-                <td colSpan={canDelete ? 8 : 7} className="border px-4 py-2 text-center">
+                <td colSpan={canDelete ? 9 : 8} className="border px-4 py-2 text-center">
                   No hay solicitudes disponibles
                 </td>
               </tr>
@@ -646,6 +584,7 @@ export const RequestsTable = () => {
               filteredRequests.map((req) => (
                 <tr key={req.id} className="hover:bg-gray-50">
                   <td className="border px-4 py-2">{req.requestId}</td>
+                  <td className="border px-4 py-2">{req.company}</td>
                   <td className="border px-4 py-2">{req.userName}</td>
                   <td className="border px-4 py-2">
                     {formatDate(req.requestDate)}

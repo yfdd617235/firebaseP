@@ -6,6 +6,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Unauthorized from './pages/Unauthorized';
 import AuthProvider from './context/AuthContext';
 import NavBar from './components/NavBar';
+import { ResetPassword } from './components/ResetPassword';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<UserLogin />} />
           <Route path="/login" element={<UserLogin />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Rutas protegidas para cualquier usuario autenticado */}
