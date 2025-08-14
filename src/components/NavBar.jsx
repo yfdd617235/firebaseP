@@ -25,24 +25,32 @@ const NavBar = () => {
       case "admin":
         return (
           <>
-            <Link to="/admin" className="hover:underline">
-              Admin Dashboard
+            <Link to="/newuser" className="hover:underline">
+              New User
             </Link>
-            <Link to="/dashboard" className="hover:underline">
-              Client Dashboard
+            <Link to="/requestform" className="hover:underline">
+              Service Request
+            </Link>
+            <Link to="/requestlist" className="hover:underline">
+              Request List
             </Link>
           </>
         );
       case "client":
         return (
-          <Link to="/dashboard" className="hover:underline">
-            Dashboard
-          </Link>
+          <>
+            <Link to="/requestform" className="hover:underline">
+              Service Request
+            </Link>
+            <Link to="/requestlist" className="hover:underline">
+              Request List
+            </Link>
+          </>
         );
       case "provider":
         return (
-          <Link to="/dashboard" className="hover:underline">
-            Provider Dashboard
+          <Link to="/requestlist" className="hover:underline">
+            Request List
           </Link>
         );
       default:
@@ -51,7 +59,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="border px-4 py-3 flex justify-between items-center">
+    <nav className="bg-white fixed top-0 left-0 w-full z-50 border px-4 py-3 flex justify-between items-center">
       <div className="flex items-center gap-4">
         <Link to="/" className="font-bold text-lg">
           Home
@@ -64,7 +72,7 @@ const NavBar = () => {
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <span className="text-sm mr-2">
+            <span className="text-sm mr-2 text-red-500 font-bold">
               {profile?.name || user.email}
             </span>
             <button

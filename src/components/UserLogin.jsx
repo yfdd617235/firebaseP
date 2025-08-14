@@ -192,18 +192,18 @@ export const UserLogin = () => {
         ) : user ? (
           <div className="space-y-4 text-center">
             <h3 className="text-lg font-semibold">
-              Welcome, {profile?.name || user.email}{profile?.company ? ` from ${profile.company}` : ''}
+              Welcome, {profile?.name || user.email}
             </h3>
             <p className="text-sm text-gray-600">
               Role: {profile?.role || 'No role assigned'}
             </p>
-            <button
+            {/* <button
               onClick={() => signOutUser()}
               disabled={isLoadingAction}
               className="w-full border rounded px-4 py-2 font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
             >
               {isLoadingAction ? 'Logging out...' : 'Logout'}
-            </button>
+            </button> */}
           </div>
         ) : (
           <div className="space-y-4">
